@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MotionScene xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ConstraintSet android:id="@+id/start">
+        <Constraint android:id="@+id/status_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toEndOf="@+id/status_title"
+            app:layout_constraintBottom_toBottomOf="@+id/status_title" />
+    </ConstraintSet>
+
+    <ConstraintSet android:id="@+id/end">
+        <Constraint android:id="@id/status_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="@+id/status_title"
+            app:layout_constraintStart_toStartOf="@+id/file_name"/>
+    </ConstraintSet>
+
+    <Transition
+        app:constraintSetStart="@+id/start"
+        app:constraintSetEnd="@id/end"
+        app:duration="2000"
+        app:autoTransition="animateToEnd">
+
+        <OnClick
+            app:targetId="@id/status_text"
+            app:clickAction="toggle" />
+    </Transition>
+
+</MotionScene>
