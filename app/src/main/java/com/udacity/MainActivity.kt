@@ -25,7 +25,6 @@ import com.udacity.utils.sendNotification
 import android.Manifest
 
 
-
 class MainActivity : AppCompatActivity() {
 
     private var downloadID: Long = 0
@@ -36,9 +35,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val requestNotificationPermissionCode = 1001
 
-
-
-
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,7 +42,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
 
-        // Register BroadcastReceiver to listen for download completion
+
         registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
 
         loadingButton = binding.contentMain.customButton
@@ -55,8 +51,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
-    // BroadcastReceiver to handle download completion
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent) {
             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
@@ -66,7 +60,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Handles download completion logic
+
     @SuppressLint("Range")
     private fun handleDownloadCompletion(context: Context?) {
         val manager = context?.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager
@@ -77,14 +71,52 @@ class MainActivity : AppCompatActivity() {
             if (it.moveToFirst()) {
                 val status = it.getInt(it.getColumnIndex(DownloadManager.COLUMN_STATUS))
                 val notificationMessage = if (status == DownloadManager.STATUS_SUCCESSFUL) {
-                    "download successfully"
+                    "Download successful"
                 } else {
-                    "download failed"
+                    "Download failed"
                 }
                 updateUIAfterDownload(notificationMessage)
             }
         }
     }
+
+
+    private fun download() {
+        if (selectedGitHubRepository.isNullOrEmpty()) {
+            showToast(getString(R.string.noRepotSelectedText))
+            return
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+
+            requestNotificationPermission()
+        } else {
+
+            startDownload()
+        }
+    }
+
+
+    private fun startDownload() {
+        loadingButton.setLoadingButtonState(ButtonState.Loading)
+        setupNotificationManager()
+
+
+        val request = DownloadManager.Request(Uri.parse(selectedGitHubRepository))
+            .setTitle(getString(R.string.app_name))
+            .setDescription(getString(R.string.app_description))
+            .setRequiresCharging(false)
+            .setAllowedOverMetered(true)
+            .setAllowedOverRoaming(true)
+            .setDestinationInExternalPublicDir(
+                Environment.DIRECTORY_DOWNLOADS, "repos/repository.zip"
+            )
+
+        val downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+        downloadID = downloadManager.enqueue(request)
+    }
+
 
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -98,45 +130,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == requestNotificationPermissionCode) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                setupNotificationManager()
+                startDownload()
             } else {
 
                 showToast("Notification permission is required to display notifications")
             }
         }
-    }
-
-
-
-    // function to download the selected GitHub repository
-    private fun download() {
-        if (selectedGitHubRepository.isNullOrEmpty()) {
-            showToast(getString(R.string.noRepotSelectedText))
-            return
-        }
-
-        requestNotificationPermission()
-        loadingButton.setLoadingButtonState(ButtonState.Loading)
-        setupNotificationManager()
-
-        // Download request to download the selected repository
-        val request = DownloadManager.Request(Uri.parse(selectedGitHubRepository))
-            .setTitle(getString(R.string.app_name))
-            .setDescription(getString(R.string.app_description))
-            .setRequiresCharging(false)
-            .setAllowedOverMetered(true)
-            .setAllowedOverRoaming(true)
-            .setDestinationInExternalPublicDir(
-                Environment.DIRECTORY_DOWNLOADS, "repos/repository.zip"
-            )
-
-        val downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-        downloadID = downloadManager.enqueue(request)
     }
 
 
@@ -180,15 +185,8 @@ class MainActivity : AppCompatActivity() {
         if (view is RadioButton && view.isChecked) {
             when (view.id) {
                 R.id.glide_button -> setRepository(R.string.glideGithubURL, R.string.glide_text)
-                R.id.load_app_button -> setRepository(
-                    R.string.loadAppGithubURL,
-                    R.string.load_app_text
-                )
-
-                R.id.retrofit_button -> setRepository(
-                    R.string.retrofitGithubURL,
-                    R.string.retrofit_text
-                )
+                R.id.load_app_button -> setRepository(R.string.loadAppGithubURL, R.string.load_app_text)
+                R.id.retrofit_button -> setRepository(R.string.retrofitGithubURL, R.string.retrofit_text)
             }
         }
     }
@@ -208,6 +206,6 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         unregisterReceiver(receiver)
     }
-
 }
+
 
