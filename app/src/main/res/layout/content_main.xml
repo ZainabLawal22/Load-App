@@ -68,7 +68,9 @@
         android:layout_marginBottom="50dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:buttonBackgroundColor="@color/colorPrimary"
+        app:loadingText="@string/loading"    />
 
     <ImageView
         android:id="@+id/cloud_download_image"

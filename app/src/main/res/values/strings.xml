@@ -24,4 +24,5 @@
     <string name="retrofitGithubURL">https://github.com/square/retrofit</string>
     <string name="ok">OK</string>
     <string name="snooze">Snooze</string>
+    <string name="loading">Loading...... </string>
 </resources>

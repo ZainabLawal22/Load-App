@@ -1,6 +1,7 @@
 package com.udacity
 
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -15,6 +16,7 @@ import kotlin.properties.Delegates
 
 
 
+@SuppressLint("ResourceAsColor")
 class LoadingButton @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
@@ -65,8 +67,11 @@ class LoadingButton @JvmOverloads constructor(
             0, 0).apply {
 
             try {
-                buttonText = "Loading......"
-                buttonBackgroundColor = ContextCompat.getColor(context, R.color.colorPrimary)
+                buttonBackgroundColor = getColor(R.styleable.LoadingButton_buttonBackgroundColor,R.color.colorPrimary)
+                buttonText = getString(R.styleable.LoadingButton_loadingText) ?: "Loading..."
+
+//                buttonText = "Loading......"
+//                buttonBackgroundColor = ContextCompat.getColor(context, R.color.colorPrimary)
             } finally {
                 recycle()
             }

@@ -1,18 +1,14 @@
 package com.udacity
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.database.Cursor
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -22,11 +18,11 @@ import android.view.View
 import android.widget.RadioButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.NotificationCompat
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.udacity.databinding.ActivityMainBinding
 import com.udacity.utils.sendNotification
-import java.io.File
+import android.Manifest
 
 
 
@@ -38,6 +34,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var loadingButton: LoadingButton
     private lateinit var notificationManager: NotificationManager
     private lateinit var binding: ActivityMainBinding
+    private val requestNotificationPermissionCode = 1001
+
+
+
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,6 +53,8 @@ class MainActivity : AppCompatActivity() {
         loadingButton.setLoadingButtonState(ButtonState.Completed)
         loadingButton.setOnClickListener { download() }
     }
+
+
 
     // BroadcastReceiver to handle download completion
     private val receiver = object : BroadcastReceiver() {
@@ -77,12 +79,39 @@ class MainActivity : AppCompatActivity() {
                 val notificationMessage = if (status == DownloadManager.STATUS_SUCCESSFUL) {
                     "download successfully"
                 } else {
-                   "download failed"
+                    "download failed"
                 }
                 updateUIAfterDownload(notificationMessage)
             }
         }
     }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    requestNotificationPermissionCode
+                )
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == requestNotificationPermissionCode) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                setupNotificationManager()
+            } else {
+
+                showToast("Notification permission is required to display notifications")
+            }
+        }
+    }
+
+
 
     // function to download the selected GitHub repository
     private fun download() {
@@ -91,6 +120,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        requestNotificationPermission()
         loadingButton.setLoadingButtonState(ButtonState.Loading)
         setupNotificationManager()
 
@@ -111,7 +141,10 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun setupNotificationManager() {
-        notificationManager = ContextCompat.getSystemService(applicationContext, NotificationManager::class.java) as NotificationManager
+        notificationManager = ContextCompat.getSystemService(
+            applicationContext,
+            NotificationManager::class.java
+        ) as NotificationManager
         createNotificationChannel()
     }
 
@@ -135,7 +168,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateUIAfterDownload(message: String) {
         loadingButton.setLoadingButtonState(ButtonState.Completed)
-        notificationManager.sendNotification(selectedGitHubFileName.orEmpty(), applicationContext, message)
+        notificationManager.sendNotification(
+            selectedGitHubFileName.orEmpty(),
+            applicationContext,
+            message
+        )
     }
 
 
@@ -143,8 +180,15 @@ class MainActivity : AppCompatActivity() {
         if (view is RadioButton && view.isChecked) {
             when (view.id) {
                 R.id.glide_button -> setRepository(R.string.glideGithubURL, R.string.glide_text)
-                R.id.load_app_button -> setRepository(R.string.loadAppGithubURL, R.string.load_app_text)
-                R.id.retrofit_button -> setRepository(R.string.retrofitGithubURL, R.string.retrofit_text)
+                R.id.load_app_button -> setRepository(
+                    R.string.loadAppGithubURL,
+                    R.string.load_app_text
+                )
+
+                R.id.retrofit_button -> setRepository(
+                    R.string.retrofitGithubURL,
+                    R.string.retrofit_text
+                )
             }
         }
     }
@@ -159,5 +203,11 @@ class MainActivity : AppCompatActivity() {
     private fun showToast(text: String) {
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(receiver)
+    }
+
 }
 
